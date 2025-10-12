@@ -1,23 +1,11 @@
 {
-  // Minimal Renovate Bot configuration
-  // Using JSON5 format for better readability and comments
-  
-  // Enable conventional commits
   "commitMessagePrefix": "chore(deps):",
   "commitMessageAction": "update",
   "commitMessageTopic": "{{depName}}",
   "commitMessageExtra": "to {{newVersion}}",
-  
-  // Basic configuration
   "extends": ["config:base"],
-  
-  // Branch naming
   "branchPrefix": "renovate/",
   "branchName": "{{depName}}-{{newVersion}}",
-  
-  // PR settings
   "prTitle": "{{commitMessagePrefix}} {{commitMessageTopic}} {{commitMessageExtra}}",
-  
-  // Auto-merge disabled for safety
   "automerge": false
 }
