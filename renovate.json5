@@ -1,0 +1,109 @@
+{
+  // Renovate Bot configuration for Docker images repository
+  // Using JSON5 format for better readability and comments
+  
+  // Enable conventional commits
+  "commitMessagePrefix": "chore(deps):",
+  "commitMessageAction": "update",
+  "commitMessageTopic": "{{depName}}",
+  "commitMessageExtra": "to {{newVersion}}",
+  
+  // Dependency update settings
+  "extends": [
+    "config:base",
+    "docker:enableMajor"
+  ],
+  
+  // Schedule settings
+  "schedule": [
+    "before 6am on monday"
+  ],
+  
+  // Package rules for different types of dependencies
+  "packageRules": [
+    {
+      // Docker base image updates
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["alpine", "ubuntu", "debian", "golang", "node"],
+      "commitMessagePrefix": "chore(docker):",
+      "commitMessageTopic": "{{depName}} base image",
+      "groupName": "docker base images",
+      "groupSlug": "docker-base"
+    },
+    {
+      // Go dependencies
+      "matchManagers": ["gomod"],
+      "commitMessagePrefix": "chore(deps):",
+      "commitMessageTopic": "go {{depName}}",
+      "groupName": "go dependencies",
+      "groupSlug": "go-deps"
+    },
+    {
+      // Node.js dependencies
+      "matchManagers": ["npm"],
+      "commitMessagePrefix": "chore(deps):",
+      "commitMessageTopic": "node {{depName}}",
+      "groupName": "node dependencies",
+      "groupSlug": "node-deps"
+    },
+    {
+      // GitHub Actions
+      "matchManagers": ["github-actions"],
+      "commitMessagePrefix": "chore(ci):",
+      "commitMessageTopic": "{{depName}} action",
+      "groupName": "github actions",
+      "groupSlug": "github-actions"
+    }
+  ],
+  
+  // Branch naming
+  "branchPrefix": "renovate/",
+  "branchName": "{{depName}}-{{newVersion}}",
+  
+  // PR settings
+  "prTitle": "{{commitMessagePrefix}} {{commitMessageTopic}} {{commitMessageExtra}}",
+  "prBody": "This PR contains the following updates:\n\n{{#each upgrades}}\n- **{{this.depName}}**: {{this.currentVersion}} → {{this.newVersion}}\n{{/each}}\n\n---\n\n**Note**: This PR was automatically created by Renovate Bot.",
+  
+  // Auto-merge settings (disabled for safety)
+  "automerge": false,
+  "automergeType": "pr",
+  
+  // Review settings
+  "reviewers": [],
+  "assignees": [],
+  
+  // Labels
+  "labels": ["dependencies", "renovate"],
+  
+  // Ignore patterns
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/vendor/**"
+  ],
+  
+  // Security updates
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "commitMessagePrefix": "fix(security):",
+    "commitMessageTopic": "{{depName}} vulnerability",
+    "labels": ["security", "dependencies"]
+  },
+  
+  // Docker-specific settings
+  "docker": {
+    "enabled": true,
+    "pinDigests": true
+  },
+  
+  // Go-specific settings
+  "gomod": {
+    "enabled": true,
+    "postUpdateOptions": ["gomodTidy"]
+  },
+  
+  // Node.js-specific settings
+  "npm": {
+    "enabled": true,
+    "postUpdateOptions": ["npmDedupe"]
+  }
+}
