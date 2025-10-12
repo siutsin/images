@@ -1,4 +1,4 @@
-FROM golang:1.25-alpine AS builder
+FROM golang:1.25-alpine@sha256:06cdd34bd531b810650e47762c01e025eb9b1c7eadd191553b91c9f2d549fae8 AS builder
 
 RUN apk add --no-cache git
 
@@ -15,7 +15,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o jsonnetfmt ./cmd/jsonn
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o jsonnet-lint ./cmd/jsonnet-lint
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o jsonnet-deps ./cmd/jsonnet-deps
 
-FROM gcr.io/distroless/static-debian12
+FROM gcr.io/distroless/static-debian12@sha256:87bce11be0af225e4ca761c40babb06d6d559f5767fbf7dc3c47f0f1a466b92c
 
 COPY --from=builder /build/jsonnet* /usr/local/bin/
 
