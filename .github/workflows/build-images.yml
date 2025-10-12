@@ -1,0 +1,85 @@
+name: Build and Publish Docker Image
+
+# NOTE: This workflow currently supports only 1 image per PR/push
+# If multiple images are changed, only the first one will be built
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'images/*/**'
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract package name from changed files
+        id: package_name
+        run: |
+          # Get the list of changed files
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+
+          # Extract package names from images/*/ paths
+          PACKAGE_NAMES=$(echo "$CHANGED_FILES" | grep '^images/[^/]*/' | sed 's|images/\([^/]*\)/.*|\1|' | sort -u)
+
+          # Take the first package name (assuming single package changes per push)
+          PACKAGE_NAME=$(echo "$PACKAGE_NAMES" | head -1)
+
+          if [ -z "$PACKAGE_NAME" ]; then
+            echo "No package found in changed files"
+            exit 1
+          fi
+
+          echo "package_name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
+          echo "image_name=${{ github.repository }}/$PACKAGE_NAME" >> $GITHUB_OUTPUT
+          echo "context_path=./images/$PACKAGE_NAME" >> $GITHUB_OUTPUT
+
+          echo "Detected package: $PACKAGE_NAME"
+          echo "Image name: ${{ github.repository }}/$PACKAGE_NAME"
+          echo "Context path: ./images/$PACKAGE_NAME"
+
+      - name: Generate timestamp tag
+        id: timestamp
+        run: |
+          # Generate timestamp in format YYYYMMDDHHMM (e.g., 202510112357)
+          TIMESTAMP=$(date +"%Y%m%d%H%M")
+          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+          echo "Generated timestamp: $TIMESTAMP"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
+        with:
+          context: ${{ steps.package_name.outputs.context_path }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ steps.package_name.outputs.image_name }}:latest
+            ${{ env.REGISTRY }}/${{ steps.package_name.outputs.image_name }}:${{ steps.timestamp.outputs.timestamp }}

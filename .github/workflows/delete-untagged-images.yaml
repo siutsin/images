@@ -1,0 +1,32 @@
+name: Delete Untagged Images
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  clean-ghcr:
+    runs-on: ubuntu-latest
+
+    permissions:
+      packages: write
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+
+      - name: Get all package names
+        id: packages
+        run: |
+          PACKAGES=$(find images -maxdepth 1 -type d -not -path images | sed 's|images/||' | tr '\n' ' ')
+          echo "packages=$PACKAGES" >> $GITHUB_OUTPUT
+          echo "Found packages: $PACKAGES"
+
+      - name: Clean up packages
+        uses: dataaxiom/ghcr-cleanup-action@cd0cdb900b5dbf3a6f2cc869f0dbb0b8211f50c4 # v1
+        with:
+          packages: ${{ steps.packages.outputs.packages }}
+          delete-untagged: true
+          older-than: 3 months
+          keep-n-tagged: 10
+          validate: true
