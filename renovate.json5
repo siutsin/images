@@ -1,6 +1,12 @@
 {
-  "extends": ["config:base", ":semanticCommits"],
-  "branchPrefix": "renovate/",
-  "branchName": "{{depName}}-{{newVersion}}",
-  "automerge": false
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:best-practices"
+  ],
+  "automerge": true,
+  "major": {
+    "automerge": false
+  },
+  "minimumReleaseAge": "3 days",
+  "rebaseWhen": "behind-base-branch"
 }
