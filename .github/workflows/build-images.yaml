@@ -1,0 +1,144 @@
+name: Build and Publish Docker Images
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - 'images/*/**'
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.find.outputs.matrix }}
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - name: Find images to build
+        id: find
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT_NAME" = "push" ]; then
+            CHANGED=$(git diff --name-only HEAD~1 HEAD)
+            NAMES=$(echo "$CHANGED" \
+              | grep '^images/[^/]*/' \
+              | sed 's|images/\([^/]*\)/.*|\1|' \
+              | sort -u)
+          else
+            NAMES=$(find images -name build.yaml -printf '%h\n' \
+              | xargs -I{} basename {})
+          fi
+
+          MATRIX="[]"
+          for NAME in $NAMES; do
+            CONFIG="images/$NAME/build.yaml"
+            UPSTREAM=$(yq '.upstream' "$CONFIG")
+            STRATEGY=$(yq '.strategy' "$CONFIG")
+            CONTEXT=$(yq '.context' "$CONFIG")
+            DOCKERFILE=$(yq '.dockerfile' "$CONFIG")
+
+            # Resolve upstream tag
+            TAG=""
+            if [ "$STRATEGY" = "latest-tag" ]; then
+              TAG=$(git ls-remote --tags --sort=-v:refname "$UPSTREAM" \
+                | head -1 \
+                | sed 's|.*refs/tags/||')
+            fi
+
+            # Skip if tag already exists in registry (schedule/dispatch only)
+            if [ "$EVENT_NAME" != "push" ] && [ -n "$TAG" ]; then
+              PACKAGE="$REPO_NAME/$NAME"
+              EXISTS=$(gh api \
+                "/user/packages/container/$PACKAGE/versions" \
+                --jq ".[].metadata.container.tags[]" 2>/dev/null \
+                | grep -cx "$TAG")
+              if [ "$EXISTS" -gt 0 ]; then
+                echo "Skipping $NAME: tag $TAG already in registry"
+                continue
+              fi
+            fi
+
+            MATRIX=$(echo "$MATRIX" | jq -c \
+              --arg name "$NAME" \
+              --arg upstream "$UPSTREAM" \
+              --arg tag "$TAG" \
+              --arg context "$CONTEXT" \
+              --arg dockerfile "$DOCKERFILE" \
+              '. += [{"name":$name,"upstream":$upstream,"tag":$tag,"context":$context,"dockerfile":$dockerfile}]')
+          done
+
+          echo "matrix={\"include\":$MATRIX}" >> "$GITHUB_OUTPUT"
+          echo "Discovered: $MATRIX"
+
+  build:
+    needs: discover
+    if: needs.discover.outputs.matrix != '{"include":[]}'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.discover.outputs.matrix) }}
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Clone upstream repository
+        if: startsWith(matrix.context, 'upstream/')
+        run: |
+          git clone --depth 1 --branch "${{ matrix.tag }}" \
+            "${{ matrix.upstream }}" upstream
+
+      - name: Generate tags
+        id: tags
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.name }}"
+          TIMESTAMP=$(date +"%Y%m%d%H%M")
+          UPSTREAM_TAG="${{ matrix.tag }}"
+          TAGS="$IMAGE:latest"
+          if [ -n "$UPSTREAM_TAG" ]; then
+            TAGS="$TAGS,$IMAGE:$UPSTREAM_TAG"
+            TAGS="$TAGS,$IMAGE:$UPSTREAM_TAG-$TIMESTAMP"
+          else
+            TAGS="$TAGS,$IMAGE:$TIMESTAMP"
+          fi
+          echo "tags=$TAGS" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          build-args: |
+            UPSTREAM_REF=${{ matrix.tag }}

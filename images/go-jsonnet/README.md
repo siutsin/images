@@ -8,7 +8,7 @@ The official go-jsonnet repository doesn't provide Docker images, and bitnami/js
 
 ## License
 
-Apache-2.0 (go-jsonnet) - Compatible with this project's MIT license
+Apache-2.0 (go-jsonnet) - Compatible with this project's MIT licence
 
 ## Usage
 
