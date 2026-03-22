@@ -4,7 +4,7 @@ Docker image for [JSON Crack](https://github.com/AykutSarac/jsoncrack.com) – a
 
 ## Why
 
-This image is built periodically from the upstream repository to provide an up-to-date containerised version served via nginx. It uses the upstream Dockerfile at the repository root directly, so builds may break if the upstream layout changes.
+This image is built periodically from the upstream repository to provide an up-to-date containerised version served via nginx. It uses a custom Dockerfile that patches `next/font/google` imports to avoid fetching fonts at build time, which fails under QEMU emulation for multi-platform builds.
 
 ## License
 
