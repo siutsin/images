@@ -144,16 +144,21 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
-        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7
         env:
           BUILD_CONTEXT: ${{ matrix.context }}
           BUILD_DOCKERFILE: ${{ matrix.dockerfile }}
           BUILD_UPSTREAM_REF: ${{ matrix.tag }}
-        with:
-          context: ${{ env.BUILD_CONTEXT }}
-          file: ${{ env.BUILD_DOCKERFILE }}
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.tags.outputs.tags }}
-          build-args: |
-            UPSTREAM_REF=${{ env.BUILD_UPSTREAM_REF }}
+          BUILD_TAGS: ${{ steps.tags.outputs.tags }}
+        run: |
+          TAGS=""
+          IFS=',' read -ra TAG_LIST <<< "$BUILD_TAGS"
+          for T in "${TAG_LIST[@]}"; do
+            TAGS="$TAGS --tag $T"
+          done
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --build-arg "UPSTREAM_REF=$BUILD_UPSTREAM_REF" \
+            --file "$BUILD_DOCKERFILE" \
+            $TAGS \
+            --push \
+            "$BUILD_CONTEXT"
