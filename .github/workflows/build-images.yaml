@@ -20,7 +20,7 @@ jobs:
       contents: read
       packages: read
     outputs:
-      matrix: ${{ steps.find.outputs.matrix }}
+      matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
       - name: Clone the code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -28,24 +28,33 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Find images to build
-        id: find
+      - name: Find changed images
+        if: github.event_name == 'push'
+        id: changed
+        run: |
+          CHANGED=$(git diff --name-only HEAD~1 HEAD)
+          NAMES=$(echo "$CHANGED" \
+            | grep '^images/[^/]*/' \
+            | sed 's|images/\([^/]*\)/.*|\1|' \
+            | sort -u)
+          echo "names=$NAMES" >> "$GITHUB_OUTPUT"
+
+      - name: Find all images
+        if: github.event_name != 'push'
+        id: all
+        run: |
+          NAMES=$(find images -name build.yaml -printf '%h\n' \
+            | xargs -I{} basename {})
+          echo "names=$NAMES" >> "$GITHUB_OUTPUT"
+
+      - name: Build matrix
+        id: matrix
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO_NAME: ${{ github.event.repository.name }}
           EVENT_NAME: ${{ github.event_name }}
+          NAMES: ${{ steps.changed.outputs.names || steps.all.outputs.names }}
         run: |
-          if [ "$EVENT_NAME" = "push" ]; then
-            CHANGED=$(git diff --name-only HEAD~1 HEAD)
-            NAMES=$(echo "$CHANGED" \
-              | grep '^images/[^/]*/' \
-              | sed 's|images/\([^/]*\)/.*|\1|' \
-              | sort -u)
-          else
-            NAMES=$(find images -name build.yaml -printf '%h\n' \
-              | xargs -I{} basename {})
-          fi
-
           MATRIX="[]"
           for NAME in $NAMES; do
             CONFIG="images/$NAME/build.yaml"
@@ -53,24 +62,20 @@ jobs:
             STRATEGY=$(yq '.strategy' "$CONFIG")
             CONTEXT=$(yq '.context' "$CONFIG")
             DOCKERFILE=$(yq '.dockerfile' "$CONFIG")
-
-            # Resolve upstream tag
             TAG=""
+
             if [ "$STRATEGY" = "latest-tag" ]; then
               TAG=$(git ls-remote --tags --sort=-v:refname "$UPSTREAM" \
                 | head -1 \
                 | sed 's|.*refs/tags/||')
             fi
 
-            # Skip if tag already exists in registry (schedule/dispatch only)
             if [ "$EVENT_NAME" != "push" ] && [ -n "$TAG" ]; then
               PACKAGE="$REPO_NAME/$NAME"
-              EXISTS=$(gh api \
-                "/user/packages/container/$PACKAGE/versions" \
+              if gh api "/user/packages/container/$PACKAGE/versions" \
                 --jq ".[].metadata.container.tags[]" 2>/dev/null \
-                | grep -cx "$TAG")
-              if [ "$EXISTS" -gt 0 ]; then
-                echo "Skipping $NAME: tag $TAG already in registry"
+                | grep -qx "$TAG"; then
+                echo "Skipping $NAME: $TAG already in registry"
                 continue
               fi
             fi
@@ -81,11 +86,9 @@ jobs:
               --arg tag "$TAG" \
               --arg context "$CONTEXT" \
               --arg dockerfile "$DOCKERFILE" \
-              '. += [{"name":$name,"upstream":$upstream,"tag":$tag,"context":$context,"dockerfile":$dockerfile}]')
+              '. += [{name:$name,upstream:$upstream,tag:$tag,context:$context,dockerfile:$dockerfile}]')
           done
-
           echo "matrix={\"include\":$MATRIX}" >> "$GITHUB_OUTPUT"
-          echo "Discovered: $MATRIX"
 
   build:
     needs: discover
@@ -150,15 +153,15 @@ jobs:
           BUILD_UPSTREAM_REF: ${{ matrix.tag }}
           BUILD_TAGS: ${{ steps.tags.outputs.tags }}
         run: |
-          TAGS=""
           IFS=',' read -ra TAG_LIST <<< "$BUILD_TAGS"
+          TAG_ARGS=()
           for T in "${TAG_LIST[@]}"; do
-            TAGS="$TAGS --tag $T"
+            TAG_ARGS+=(--tag "$T")
           done
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
             --build-arg "UPSTREAM_REF=$BUILD_UPSTREAM_REF" \
             --file "$BUILD_DOCKERFILE" \
-            $TAGS \
+            "${TAG_ARGS[@]}" \
             --push \
             "$BUILD_CONTEXT"
