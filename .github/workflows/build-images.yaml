@@ -67,7 +67,8 @@ jobs:
           # For each image, read its build.yaml, resolve the upstream tag,
           # and add it to the build matrix unless it already exists in GHCR.
           MATRIX="[]"
-          for NAME in $NAMES; do
+          read -ra NAME_LIST <<< "$NAMES"
+          for NAME in "${NAME_LIST[@]}"; do
             CONFIG="images/$NAME/build.yaml"
             UPSTREAM=$(yq '.upstream' "$CONFIG")
             STRATEGY=$(yq '.strategy' "$CONFIG")
@@ -142,7 +143,7 @@ jobs:
           #   latest                     (always)
           #   $upstreamTag               (moving tag, tracks upstream version)
           #   $upstreamTag-$timestamp    (immutable, unique per build)
-          IMAGE="${{ env.REGISTRY }}/$REPO/$IMAGE_NAME"
+          IMAGE="$REGISTRY/$REPO/$IMAGE_NAME"
           TIMESTAMP=$(date +"%Y%m%d%H%M")
           TAGS="$IMAGE:latest"
           if [ -n "$UPSTREAM_TAG" ]; then
