@@ -4,7 +4,7 @@ Docker image for [JSON Crack](https://github.com/AykutSarac/jsoncrack.com) – a
 
 ## Why
 
-This image is built periodically from the upstream repository to provide an up-to-date containerised version served via nginx. It uses the upstream Dockerfile at `apps/www/Dockerfile` directly, so builds may break if the upstream layout changes.
+This image is built periodically from the upstream repository to provide an up-to-date containerised version served via nginx. It uses the upstream Dockerfile at the repository root directly, so builds may break if the upstream layout changes.
 
 ## License
 
