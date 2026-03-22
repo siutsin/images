@@ -48,7 +48,8 @@ jobs:
           NAMES=$(echo "$CHANGED" \
             | grep '^images/[^/]*/' \
             | sed 's|images/\([^/]*\)/.*|\1|' \
-            | sort -u)
+            | sort -u \
+            | tr '\n' ' ')
           echo "names=$NAMES" >> "$GITHUB_OUTPUT"
 
       - name: Find all images
@@ -59,7 +60,8 @@ jobs:
           # every image for new upstream tags. The matrix step filters out
           # images whose tag already exists in GHCR.
           NAMES=$(find images -name build.yaml -printf '%h\n' \
-            | xargs -I{} basename {})
+            | xargs -I{} basename {} \
+            | tr '\n' ' ')
           echo "names=$NAMES" >> "$GITHUB_OUTPUT"
 
       - name: Build matrix
