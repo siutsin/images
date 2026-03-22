@@ -16,6 +16,9 @@ env:
 jobs:
   discover:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     outputs:
       matrix: ${{ steps.find.outputs.matrix }}
     steps:
@@ -23,6 +26,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Find images to build
         id: find
@@ -97,19 +101,26 @@ jobs:
     steps:
       - name: Clone the code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Clone upstream repository
         if: startsWith(matrix.context, 'upstream/')
+        env:
+          UPSTREAM_REPO: ${{ matrix.upstream }}
+          UPSTREAM_TAG: ${{ matrix.tag }}
         run: |
-          git clone --depth 1 --branch "${{ matrix.tag }}" \
-            "${{ matrix.upstream }}" upstream
+          git clone --depth 1 --branch "$UPSTREAM_TAG" \
+            "$UPSTREAM_REPO" upstream
 
       - name: Generate tags
         id: tags
+        env:
+          IMAGE_NAME: ${{ matrix.name }}
+          UPSTREAM_TAG: ${{ matrix.tag }}
         run: |
-          IMAGE="${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.name }}"
+          IMAGE="${{ env.REGISTRY }}/${{ github.repository }}/$IMAGE_NAME"
           TIMESTAMP=$(date +"%Y%m%d%H%M")
-          UPSTREAM_TAG="${{ matrix.tag }}"
           TAGS="$IMAGE:latest"
           if [ -n "$UPSTREAM_TAG" ]; then
             TAGS="$TAGS,$IMAGE:$UPSTREAM_TAG"
@@ -134,11 +145,15 @@ jobs:
 
       - name: Build and push
         uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7
+        env:
+          BUILD_CONTEXT: ${{ matrix.context }}
+          BUILD_DOCKERFILE: ${{ matrix.dockerfile }}
+          BUILD_UPSTREAM_REF: ${{ matrix.tag }}
         with:
-          context: ${{ matrix.context }}
-          file: ${{ matrix.dockerfile }}
+          context: ${{ env.BUILD_CONTEXT }}
+          file: ${{ env.BUILD_DOCKERFILE }}
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.tags.outputs.tags }}
           build-args: |
-            UPSTREAM_REF=${{ matrix.tag }}
+            UPSTREAM_REF=${{ env.BUILD_UPSTREAM_REF }}
