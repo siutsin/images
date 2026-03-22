@@ -6,8 +6,11 @@ RUN apk add --no-cache git
 
 WORKDIR /build
 
-RUN git clone https://github.com/google/go-jsonnet.git .
-RUN if [ "$UPSTREAM_REF" != "HEAD" ]; then git checkout "$UPSTREAM_REF"; fi
+RUN if [ "$UPSTREAM_REF" != "HEAD" ]; then \
+      git clone --depth 1 --branch "$UPSTREAM_REF" https://github.com/google/go-jsonnet.git .; \
+    else \
+      git clone --depth 1 https://github.com/google/go-jsonnet.git .; \
+    fi
 
 # Build all binaries with optimisations for minimal size:
 # - CGO_ENABLED=0: Disable CGO for static binaries (no external C dependencies)

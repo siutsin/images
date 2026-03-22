@@ -13,5 +13,5 @@ Apache-2.0 (jsoncrack.com) – Compatible with this project's MIT licence
 ## Usage
 
 ```bash
-docker run --rm -p 8080:8080 jsoncrack
+docker run --rm -p 8080:8080 ghcr.io/siutsin/images/jsoncrack
 ```

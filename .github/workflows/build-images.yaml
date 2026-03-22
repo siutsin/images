@@ -10,6 +10,8 @@ on:
     paths:
       - 'images/*/**'
 
+permissions: {}
+
 env:
   REGISTRY: ghcr.io
 
@@ -134,12 +136,13 @@ jobs:
         env:
           IMAGE_NAME: ${{ matrix.name }}
           UPSTREAM_TAG: ${{ matrix.tag }}
+          REPO: ${{ github.repository }}
         run: |
           # Build comma-separated tag list for the image:
           #   latest                     (always)
           #   $upstreamTag               (moving tag, tracks upstream version)
           #   $upstreamTag-$timestamp    (immutable, unique per build)
-          IMAGE="${{ env.REGISTRY }}/${{ github.repository }}/$IMAGE_NAME"
+          IMAGE="${{ env.REGISTRY }}/$REPO/$IMAGE_NAME"
           TIMESTAMP=$(date +"%Y%m%d%H%M")
           TAGS="$IMAGE:latest"
           if [ -n "$UPSTREAM_TAG" ]; then
