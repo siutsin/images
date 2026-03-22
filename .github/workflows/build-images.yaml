@@ -136,7 +136,7 @@ jobs:
           persist-credentials: false
 
       - name: Clone upstream repository
-        if: startsWith(matrix.context, 'upstream/')
+        if: startsWith(matrix.context, 'upstream')
         env:
           UPSTREAM_REPO: ${{ matrix.upstream }}
           UPSTREAM_TAG: ${{ matrix.tag }}
