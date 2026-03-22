@@ -32,6 +32,10 @@ jobs:
         if: github.event_name == 'push'
         id: changed
         run: |
+          # On push, only build images whose files were modified (e.g. by Renovate
+          # bumping a base image digest).
+          # Extract unique image names from changed paths:
+          # e.g. images/go-jsonnet/Dockerfile -> go-jsonnet
           CHANGED=$(git diff --name-only HEAD~1 HEAD)
           NAMES=$(echo "$CHANGED" \
             | grep '^images/[^/]*/' \
@@ -43,6 +47,9 @@ jobs:
         if: github.event_name != 'push'
         id: all
         run: |
+          # On schedule/dispatch there is no commit to diff against, so check
+          # every image for new upstream tags. The matrix step filters out
+          # images whose tag already exists in GHCR.
           NAMES=$(find images -name build.yaml -printf '%h\n' \
             | xargs -I{} basename {})
           echo "names=$NAMES" >> "$GITHUB_OUTPUT"
@@ -55,6 +62,8 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           NAMES: ${{ steps.changed.outputs.names || steps.all.outputs.names }}
         run: |
+          # For each image, read its build.yaml, resolve the upstream tag,
+          # and add it to the build matrix unless it already exists in GHCR.
           MATRIX="[]"
           for NAME in $NAMES; do
             CONFIG="images/$NAME/build.yaml"
@@ -64,12 +73,15 @@ jobs:
             DOCKERFILE=$(yq '.dockerfile' "$CONFIG")
             TAG=""
 
+            # Resolve the latest semver tag from the upstream repository
             if [ "$STRATEGY" = "latest-tag" ]; then
               TAG=$(git ls-remote --tags --sort=-v:refname "$UPSTREAM" \
                 | head -1 \
                 | sed 's|.*refs/tags/||')
             fi
 
+            # On schedule/dispatch, skip if this tag is already in GHCR.
+            # Push events always build to pick up base image updates.
             if [ "$EVENT_NAME" != "push" ] && [ -n "$TAG" ]; then
               PACKAGE="$REPO_NAME/$NAME"
               if gh api "/user/packages/container/$PACKAGE/versions" \
@@ -80,6 +92,7 @@ jobs:
               fi
             fi
 
+            # Append this image to the matrix JSON array
             MATRIX=$(echo "$MATRIX" | jq -c \
               --arg name "$NAME" \
               --arg upstream "$UPSTREAM" \
@@ -122,6 +135,10 @@ jobs:
           IMAGE_NAME: ${{ matrix.name }}
           UPSTREAM_TAG: ${{ matrix.tag }}
         run: |
+          # Build comma-separated tag list for the image:
+          #   latest                     (always)
+          #   $upstreamTag               (moving tag, tracks upstream version)
+          #   $upstreamTag-$timestamp    (immutable, unique per build)
           IMAGE="${{ env.REGISTRY }}/${{ github.repository }}/$IMAGE_NAME"
           TIMESTAMP=$(date +"%Y%m%d%H%M")
           TAGS="$IMAGE:latest"
@@ -153,11 +170,14 @@ jobs:
           BUILD_UPSTREAM_REF: ${{ matrix.tag }}
           BUILD_TAGS: ${{ steps.tags.outputs.tags }}
         run: |
+          # Convert comma-separated tags into --tag arguments
           IFS=',' read -ra TAG_LIST <<< "$BUILD_TAGS"
           TAG_ARGS=()
           for T in "${TAG_LIST[@]}"; do
             TAG_ARGS+=(--tag "$T")
           done
+
+          # Build multi-platform image and push to GHCR
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
             --build-arg "UPSTREAM_REF=$BUILD_UPSTREAM_REF" \
