@@ -1,0 +1,4 @@
+upstream: https://github.com/google/go-jsonnet.git
+strategy: latest-tag
+context: images/go-jsonnet
+dockerfile: images/go-jsonnet/Dockerfile

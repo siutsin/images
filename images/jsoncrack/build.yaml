@@ -1,0 +1,4 @@
+upstream: https://github.com/AykutSarac/jsoncrack.com.git
+strategy: latest-tag
+context: upstream/apps/www
+dockerfile: upstream/apps/www/Dockerfile

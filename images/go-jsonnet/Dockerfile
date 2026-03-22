@@ -1,10 +1,16 @@
 FROM golang:1.26-alpine@sha256:2389ebfa5b7f43eeafbd6be0c3700cc46690ef842ad962f6c5bd6be49ed82039 AS builder
 
+ARG UPSTREAM_REF=HEAD
+
 RUN apk add --no-cache git
 
 WORKDIR /build
 
-RUN git clone https://github.com/google/go-jsonnet.git .
+RUN if [ "$UPSTREAM_REF" != "HEAD" ]; then \
+      git clone --depth 1 --branch "$UPSTREAM_REF" https://github.com/google/go-jsonnet.git .; \
+    else \
+      git clone --depth 1 https://github.com/google/go-jsonnet.git .; \
+    fi
 
 # Build all binaries with optimisations for minimal size:
 # - CGO_ENABLED=0: Disable CGO for static binaries (no external C dependencies)
