@@ -94,7 +94,9 @@ jobs:
             # On schedule/dispatch, skip if this tag is already in GHCR.
             # Push events always build to pick up base image updates.
             if [ "$EVENT_NAME" != "push" ] && [ -n "$TAG" ]; then
-              PACKAGE="$REPO_NAME/$NAME"
+              # URL-encode the package name because it contains a slash
+              # e.g. images/go-jsonnet -> images%2Fgo-jsonnet
+              PACKAGE=$(printf '%s' "$REPO_NAME/$NAME" | jq -sRr @uri)
               if gh api "/users/$REPO_OWNER/packages/container/$PACKAGE/versions" \
                 --jq ".[].metadata.container.tags[]" 2>/dev/null \
                 | grep -qx "$TAG"; then
