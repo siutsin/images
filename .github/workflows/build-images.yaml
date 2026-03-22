@@ -33,12 +33,18 @@ jobs:
       - name: Find changed images
         if: github.event_name == 'push'
         id: changed
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
         run: |
           # On push, only build images whose files were modified (e.g. by Renovate
-          # bumping a base image digest).
-          # Extract unique image names from changed paths:
+          # bumping a base image digest). Use github.event.before to catch all
+          # commits in a multi-commit push, not just the last one.
           # e.g. images/go-jsonnet/Dockerfile -> go-jsonnet
-          CHANGED=$(git diff --name-only HEAD~1 HEAD)
+          if echo "$BEFORE_SHA" | grep -qx '0\{40\}'; then
+            CHANGED=$(git diff --name-only HEAD~1 HEAD)
+          else
+            CHANGED=$(git diff --name-only "$BEFORE_SHA" HEAD)
+          fi
           NAMES=$(echo "$CHANGED" \
             | grep '^images/[^/]*/' \
             | sed 's|images/\([^/]*\)/.*|\1|' \
@@ -60,6 +66,7 @@ jobs:
         id: matrix
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_OWNER: ${{ github.repository_owner }}
           REPO_NAME: ${{ github.event.repository.name }}
           EVENT_NAME: ${{ github.event_name }}
           NAMES: ${{ steps.changed.outputs.names || steps.all.outputs.names }}
@@ -79,6 +86,7 @@ jobs:
             # Resolve the latest semver tag from the upstream repository
             if [ "$STRATEGY" = "latest-tag" ]; then
               TAG=$(git ls-remote --tags --sort=-v:refname "$UPSTREAM" \
+                | grep -v '\^{}' \
                 | head -1 \
                 | sed 's|.*refs/tags/||')
             fi
@@ -87,7 +95,7 @@ jobs:
             # Push events always build to pick up base image updates.
             if [ "$EVENT_NAME" != "push" ] && [ -n "$TAG" ]; then
               PACKAGE="$REPO_NAME/$NAME"
-              if gh api "/user/packages/container/$PACKAGE/versions" \
+              if gh api "/users/$REPO_OWNER/packages/container/$PACKAGE/versions" \
                 --jq ".[].metadata.container.tags[]" 2>/dev/null \
                 | grep -qx "$TAG"; then
                 echo "Skipping $NAME: $TAG already in registry"

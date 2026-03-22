@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: '0 0 * * *'
 
+permissions: {}
+
 jobs:
   clean-ghcr:
     runs-on: ubuntu-latest
@@ -22,7 +24,7 @@ jobs:
         id: packages
         run: |
           PACKAGES=$(find images -maxdepth 1 -type d -not -path images | sed 's|images/||' | tr '\n' ' ')
-          echo "packages=$PACKAGES" >> $GITHUB_OUTPUT
+          echo "packages=$PACKAGES" >> "$GITHUB_OUTPUT"
           echo "Found packages: $PACKAGES"
 
       - name: Clean up packages
