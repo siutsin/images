@@ -89,8 +89,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check claude result
+        env:
+          CLAUDE_RESULT: ${{ needs.claude.result }}
         run: |
-          result="${{ needs.claude.result }}"
-          if [ "$result" = "failure" ] || [ "$result" = "cancelled" ]; then
+          if [ "$CLAUDE_RESULT" = "failure" ] || [ "$CLAUDE_RESULT" = "cancelled" ]; then
             exit 1
           fi
