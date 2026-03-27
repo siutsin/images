@@ -27,7 +27,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR_URL: ${{ github.event.pull_request.url }}
         run: |
-          FILES=$(gh api "$PR_URL/files" --jq '.[].filename')
+          FILES=$(gh api "$PR_URL/files" --paginate --jq '.[].filename')
           if echo "$FILES" | grep -qvx '.github/workflows/claude.yaml'; then
             echo "should-review=true" >> "$GITHUB_OUTPUT"
           else
@@ -90,6 +90,7 @@ jobs:
     steps:
       - name: Check claude result
         run: |
-          if [ "${{ needs.claude.result }}" = "failure" ]; then
+          result="${{ needs.claude.result }}"
+          if [ "$result" = "failure" ] || [ "$result" = "cancelled" ]; then
             exit 1
           fi
