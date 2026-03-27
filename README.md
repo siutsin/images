@@ -1,11 +1,22 @@
 # images
 
-Containerised tools and utilities.
+Containerised tools and utilities, published to GitHub Container Registry.
 
-## Available Images
+## Available images
 
-See [images/](images/) folder for available Docker images.
+| Image                           | Description                                      |
+|---------------------------------|--------------------------------------------------|
+| [go-jsonnet](images/go-jsonnet) | Go implementation of Jsonnet                     |
+| [jsoncrack](images/jsoncrack)   | Data visualisation tool for JSON, YAML, XML, CSV |
 
-## License
+## Usage
 
-MIT License
+Pull an image from GHCR:
+
+```bash
+docker pull ghcr.io/siutsin/images/<name>:latest
+```
+
+## Licence
+
+MIT
