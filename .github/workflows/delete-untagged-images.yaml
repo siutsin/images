@@ -23,7 +23,7 @@ jobs:
       - name: Get all package names
         id: packages
         run: |
-          PACKAGES=$(find images -maxdepth 1 -type d -not -path images | sed 's|images/||' | tr '\n' ' ')
+          PACKAGES=$(find images -maxdepth 1 -type d -not -path images | sed 's|images/||' | paste -sd ',' -)
           echo "packages=$PACKAGES" >> "$GITHUB_OUTPUT"
           echo "Found packages: $PACKAGES"
 
