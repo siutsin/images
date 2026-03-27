@@ -6,5 +6,11 @@
   ],
   "automerge": true,
   "minimumReleaseAge": "7 day",
-  "rebaseWhen": "behind-base-branch"
+  "rebaseWhen": "behind-base-branch",
+  "packageRules": [
+    {
+      "matchPackageNames": ["dataaxiom/ghcr-cleanup-action"],
+      "abandonmentThreshold": null
+    }
+  ]
 }
