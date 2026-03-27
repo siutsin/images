@@ -59,3 +59,14 @@ jobs:
             Skip auto-generated files and lock files.
             Keep output short and concise. Use bullet points where possible.
             Only comment on issues worth fixing. Skip praise and nitpicks.
+
+  claude-status:
+    if: always()
+    needs: claude
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check claude result
+        run: |
+          if [ "${{ needs.claude.result }}" = "failure" ]; then
+            exit 1
+          fi
