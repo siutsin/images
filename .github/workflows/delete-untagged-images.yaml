@@ -29,7 +29,7 @@ jobs:
           echo "Found packages: $PACKAGES"
 
       - name: Clean up packages
-        uses: dataaxiom/ghcr-cleanup-action@34a2b6c814b9c6bcb92f78cba3e56a7ab9ca7a86 # v1
+        uses: dataaxiom/ghcr-cleanup-action@374e2028c8fb93b7219f3771cd405fab95d3dec4 # v1
         with:
           packages: ${{ steps.packages.outputs.packages }}
           delete-untagged: true
