@@ -24,6 +24,10 @@ if (args[0] === 'happy-server') {
   args.shift();
 }
 
+if (args.length === 0) {
+  args.push('serve');
+}
+
 function runHappyServer(commandArgs) {
   const result = spawnSync(process.execPath, [serverBin, ...commandArgs], {
     env: process.env,

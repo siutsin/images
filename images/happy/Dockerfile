@@ -1,4 +1,4 @@
-FROM node:24-bookworm-slim@sha256:242549cd46785b480c832479a730f4f2a20865d61ea2e404fdb2a5c3d3b73ecf AS package
+FROM node:24-trixie-slim@sha256:05c08ce4291e9a58f59456a7985176defb12cdd42271f35ff81a3e167ea61d4c AS package
 
 ARG UPSTREAM_REF=latest
 
@@ -6,8 +6,9 @@ ENV NPM_CONFIG_AUDIT=false \
     NPM_CONFIG_FUND=false \
     NPM_CONFIG_UPDATE_NOTIFIER=false
 
-# The builder needs the OpenSSL CLI/libraries so Prisma generates the query
-# engine for the same OpenSSL ABI used by the distroless Node.js runtime.
+# The builder uses Debian 13, matching the distroless runtime's OpenSSL ABI.
+# Keep the package unpinned because the base image is digest-pinned, while
+# Debian package revisions can rotate between scheduled rebuilds.
 # hadolint ignore=DL3008
 RUN apt-get update \
     && apt-get install -y --no-install-recommends openssl \
