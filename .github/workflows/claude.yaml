@@ -14,10 +14,18 @@ on:
 
 permissions: {}
 
+env:
+  CLAUDE_REVIEW_MODEL: claude-sonnet-4-6
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.issue.number || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   check-files:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       pull-requests: read
     outputs:
@@ -30,12 +38,14 @@ jobs:
           PR_URL: ${{ github.event.pull_request.url }}
           ACTOR: ${{ github.actor }}
         run: |
+          set -euo pipefail
+
           if [ "$ACTOR" = "renovate[bot]" ]; then
             echo "should-review=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           FILES=$(gh api "$PR_URL/files" --paginate --jq '.[].filename')
-          if echo "$FILES" | grep -qvx '.github/workflows/claude.yaml'; then
+          if echo "$FILES" | grep -Fqvx '.github/workflows/claude.yaml'; then
             echo "should-review=true" >> "$GITHUB_OUTPUT"
           else
             echo "should-review=false" >> "$GITHUB_OUTPUT"
@@ -53,9 +63,10 @@ jobs:
         (contains(github.event.issue.body, '@claude') ||
         contains(github.event.issue.title, '@claude'))))
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment: automation
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
       issues: write
       id-token: write
@@ -73,8 +84,10 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           track_progress: true
-          claude_args: |
-            --model opus --allowedTools "Bash(gh pr edit:*),Bash(gh pr view:*),Bash(gh pr diff:*)"
+          claude_args: >-
+            --model ${{ env.CLAUDE_REVIEW_MODEL }}
+            --max-turns 5
+            --allowedTools "Bash(gh pr edit:*),Bash(gh pr view:*),Bash(gh pr diff:*)"
           prompt: |
             If the PR title or description does not meaningfully describe the changes, update them.
             Use conventional commit style for the title, under 72 characters.
@@ -94,11 +107,21 @@ jobs:
     if: always()
     needs: claude
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Check claude result
         env:
           CLAUDE_RESULT: ${{ needs.claude.result }}
         run: |
-          if [ "$CLAUDE_RESULT" = "failure" ] || [ "$CLAUDE_RESULT" = "cancelled" ]; then
-            exit 1
-          fi
+          case "$CLAUDE_RESULT" in
+            success|skipped)
+              exit 0
+              ;;
+            failure|cancelled)
+              exit 1
+              ;;
+            *)
+              echo "Unexpected Claude job result: $CLAUDE_RESULT"
+              exit 1
+              ;;
+          esac
