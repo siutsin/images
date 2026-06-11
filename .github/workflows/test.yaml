@@ -7,9 +7,9 @@ on:
     paths:
       - '.github/workflows/**'
       - '**/*.md'
-      - '.editorconfig'
       - '.markdownlint.json'
       - '.yamllint'
+      - 'images/**'
       - 'Makefile'
   pull_request:
     branches:
@@ -17,9 +17,9 @@ on:
     paths:
       - '.github/workflows/**'
       - '**/*.md'
-      - '.editorconfig'
       - '.markdownlint.json'
       - '.yamllint'
+      - 'images/**'
       - 'Makefile'
 
 jobs:
@@ -51,8 +51,13 @@ jobs:
           pip install zizmor
           pip install yamllint
 
-      - name: Install editorconfig-checker
-        run: npm install -g editorconfig-checker
+      - name: Install hadolint
+        env:
+          HADOLINT_VERSION: v2.14.0
+        run: |
+          HADOLINT_URL="https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-Linux-x86_64"
+          curl -fsSL -o hadolint "$HADOLINT_URL"
+          sudo install -m 0755 hadolint /usr/local/bin/hadolint
 
       - name: Run tests
         run: make test

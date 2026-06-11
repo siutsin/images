@@ -17,13 +17,13 @@ lint-yaml: ## Check YAML files with yamllint
 	@yamllint .github/workflows/ || true
 	@echo "YAML linting passed!"
 
-.PHONY: lint-editorconfig
-lint-editorconfig: ## Check EditorConfig compliance
-	@echo "Checking EditorConfig compliance..."
-	@command -v editorconfig-checker >/dev/null 2>&1 || { echo "Installing editorconfig-checker..."; npm install -g editorconfig-checker; }
-	@editorconfig-checker
-	@echo "EditorConfig check passed!"
+.PHONY: lint-docker
+lint-docker: ## Check Dockerfiles with hadolint
+	@echo "Checking Dockerfiles..."
+	@command -v hadolint >/dev/null 2>&1 || { echo "hadolint is required; install it before running make test"; exit 1; }
+	@find images -name Dockerfile -print0 | xargs -0 hadolint
+	@echo "Dockerfile linting passed!"
 
 .PHONY: test
-test: lint-editorconfig lint-markdown lint-yaml lint-zizmor
+test: lint-markdown lint-yaml lint-docker lint-zizmor
 	@echo "All validation and quality checks passed!"

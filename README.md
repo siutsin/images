@@ -7,6 +7,7 @@ Containerised tools and utilities, published to GitHub Container Registry.
 | Image                           | Description                                      |
 |---------------------------------|--------------------------------------------------|
 | [go-jsonnet](images/go-jsonnet) | Go implementation of Jsonnet                     |
+| [happy](images/happy)           | Self-hosted Happy server                         |
 | [jsoncrack](images/jsoncrack)   | Data visualisation tool for JSON, YAML, XML, CSV |
 
 ## Usage
