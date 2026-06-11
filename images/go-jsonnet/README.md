@@ -13,5 +13,5 @@ Apache-2.0 (go-jsonnet) - Compatible with this project's MIT licence
 ## Usage
 
 ```bash
-docker run --rm -v $(pwd):/workspace go-jsonnet jsonnet example.jsonnet
+docker run --rm -v $(pwd):/workspace ghcr.io/siutsin/images/go-jsonnet example.jsonnet
 ```

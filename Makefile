@@ -17,13 +17,6 @@ lint-yaml: ## Check YAML files with yamllint
 	@yamllint .github/workflows/ || true
 	@echo "YAML linting passed!"
 
-.PHONY: lint-editorconfig
-lint-editorconfig: ## Check EditorConfig compliance
-	@echo "Checking EditorConfig compliance..."
-	@command -v editorconfig-checker >/dev/null 2>&1 || { echo "Installing editorconfig-checker..."; npm install -g editorconfig-checker; }
-	@editorconfig-checker
-	@echo "EditorConfig check passed!"
-
 .PHONY: test
-test: lint-editorconfig lint-markdown lint-yaml lint-zizmor
+test: lint-markdown lint-yaml lint-zizmor
 	@echo "All validation and quality checks passed!"

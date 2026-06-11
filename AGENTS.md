@@ -1,42 +1,45 @@
 # AGENTS instructions
 
-## Development
+## Scope
 
-- Build images: `docker build -t <image-name> ./images/<image-name>/`
-- Test images: `docker run --rm <image-name> --help`
-- Run validation: `make test` (markdownlint, zizmor, editorconfig)
-- Always run `make test` after changes and before merging
-- Update documentation for any Docker image changes
+- When working in any subfolder, read that subfolder's `AGENTS.md` first if it
+  exists.
+- Do not revert unrelated local changes.
 
-## Adding a new image
+## Docker images
 
-- Create `images/<name>/Dockerfile`
-- Create `images/<name>/build.yaml` with four fields:
-  `upstream` (git URL), `strategy` (e.g. `latest-tag`),
-  `context` (build context path), `dockerfile` (Dockerfile path)
-- The build workflow detects new directories automatically
+- Images live under `images/<name>/`.
+- Prefer baking application dependencies into the image at build time instead
+  of installing packages during container startup or Kubernetes init
+  containers.
+- Prefer minimal final runtime images, such as distroless, when the
+  application can run without a shell, package manager, or debugging tools.
+- Update image documentation when Docker image behavior changes.
 
-## Registry
+Each image must include:
 
-- Images are published to `ghcr.io/siutsin/images/<name>`
-- GHCR package names are repo-scoped: `images/<name>`
+- a local `Dockerfile`, unless `build.yaml` intentionally points at an
+  upstream Dockerfile
+- `build.yaml` with:
+  - `upstream`: git URL or npm package name
+  - `strategy`: `latest-tag` for latest non-prerelease Git tag, or
+    `npm-latest` for latest npm package version
+  - `context`: build context path
+  - `dockerfile`: Dockerfile path
 
-## CI workflows
+## Commands
 
-| Workflow                      | Trigger                  | Purpose                         |
-|-------------------------------|--------------------------|---------------------------------|
-| `build-images.yaml`           | push, schedule, dispatch | Build and publish Docker images |
-| `delete-untagged-images.yaml` | schedule, dispatch       | Clean old GHCR versions         |
-| `test.yaml`                   | push, PR                 | Run linters and validation      |
-| `zizmor.yaml`                 | push, PR                 | Audit GitHub Actions workflows  |
+- Build local-context images:
+  `docker build -t <image-name> -f images/<image-name>/Dockerfile images/<image-name>/`
+- Smoke test with the image-specific command in its README. For CLI-style
+  images this is usually `--help`; for services, check the HTTP endpoint.
+- Validate: `make test`
 
-## Git workflow
+Run `make test` after changes. If local tooling needs a path override, state
+that in the final response.
 
-- Create branches: `git checkout -b feature/<description>`
-- Commit scope format: `type(scope): [<image-name>] description`
-- Scopes: ci, docker, docs, etc.
+## Quality
 
-## Pull requests
-
-- Title format: `type(scope): [<image-name>] <description>`
-- Merge only through PRs after review
+- Any lint ignore or suppression must include an inline explanation for why it
+  is necessary.
+- Registry names are `ghcr.io/siutsin/images/<name>`.

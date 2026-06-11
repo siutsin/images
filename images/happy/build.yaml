@@ -1,0 +1,4 @@
+upstream: happy-server-self-host
+strategy: npm-latest
+context: images/happy
+dockerfile: images/happy/Dockerfile

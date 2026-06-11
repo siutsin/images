@@ -73,7 +73,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           NAMES: ${{ steps.changed.outputs.names || steps.all.outputs.names }}
         run: |
-          # For each image, read its build.yaml, resolve the upstream tag,
+          # For each image, read its build.yaml, resolve the upstream version,
           # and add it to the build matrix unless it already exists in GHCR.
           MATRIX="[]"
           read -ra NAME_LIST <<< "$NAMES"
@@ -85,12 +85,19 @@ jobs:
             DOCKERFILE=$(yq '.dockerfile' "$CONFIG")
             TAG=""
 
-            # Resolve the latest semver tag from the upstream repository
             if [ "$STRATEGY" = "latest-tag" ]; then
+              # Resolve the latest non-prerelease semver tag from upstream.
               TAG=$(git ls-remote --tags --sort=-v:refname "$UPSTREAM" \
                 | grep -v '\^{}' \
+                | grep -Ev 'refs/tags/[^[:space:]]*-' \
                 | head -1 \
                 | sed 's|.*refs/tags/||')
+            elif [ "$STRATEGY" = "npm-latest" ]; then
+              # Resolve the latest published version from the npm registry.
+              TAG=$(npm view "$UPSTREAM" version)
+            else
+              echo "::error file=$CONFIG::Unsupported strategy: $STRATEGY"
+              exit 1
             fi
 
             # On schedule/dispatch, skip if this tag is already in GHCR.
