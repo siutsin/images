@@ -20,7 +20,7 @@ WORKDIR /usr/local/lib/node_modules/happy-server-self-host
 RUN ./node_modules/.bin/prisma generate --schema=prisma/schema.prisma --generator client \
     && mkdir -p /tmp/happy-data
 
-FROM gcr.io/distroless/nodejs24-debian13:nonroot@sha256:633e1463f02b25e50109325c59cfd373f404169085851b6cd2951bde1aca5623
+FROM gcr.io/distroless/nodejs24-debian13:nonroot@sha256:34eb2e7dd86129508526b047950308de41663e33d059e19befb0361a12286d7c
 
 LABEL org.opencontainers.image.source="https://github.com/slopus/happy" \
       org.opencontainers.image.description="Self-hosted Happy server"
