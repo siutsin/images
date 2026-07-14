@@ -1,4 +1,4 @@
-FROM node:24-trixie-slim@sha256:0b267ba915f3e23c2420204ac28f55c563a1c09ff4fe2c9ad32cc15afd99f5b6 AS package
+FROM node:24-trixie-slim@sha256:ae91dcc111a68c9d2d81ff2a17bda61be126426176fde6fe7d08ab13b7f50573 AS package
 
 ARG UPSTREAM_REF=latest
 
