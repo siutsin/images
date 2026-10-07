@@ -33,31 +33,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 'lts/*'
-
-      - name: Setup Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
-        with:
-          python-version: '3.x'
-
-      - name: Install markdownlint
-        run: npm install -g markdownlint-cli
-
-      - name: Install Python packages
-        run: |
-          pip install zizmor
-          pip install yamllint
-
-      - name: Install hadolint
-        env:
-          HADOLINT_VERSION: v2.14.0
-        run: |
-          HADOLINT_URL="https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-Linux-x86_64"
-          curl -fsSL -o hadolint "$HADOLINT_URL"
-          sudo install -m 0755 hadolint /usr/local/bin/hadolint
+      - name: Setup mise
+        uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5
 
       - name: Run tests
         run: make test
