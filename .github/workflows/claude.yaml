@@ -84,9 +84,10 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           track_progress: true
+          # Reviewer hit error_max_turns at 5 turns (#263). Give margin.
           claude_args: >-
             --model ${{ env.CLAUDE_REVIEW_MODEL }}
-            --max-turns 5
+            --max-turns 10
             --allowedTools "Bash(gh pr edit:*),Bash(gh pr view:*),Bash(gh pr diff:*)"
           prompt: |
             If the PR title or description does not meaningfully describe the changes, update them.
