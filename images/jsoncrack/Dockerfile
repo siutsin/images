@@ -12,7 +12,7 @@ COPY --from=deps /app /app
 COPY . .
 RUN corepack enable pnpm && pnpm run build:www
 
-FROM nginxinc/nginx-unprivileged:stable@sha256:d715f7a85cdfea820fec743ea5aee8a22f91e00ff310ad6275d2638112d8cf8d AS production
+FROM nginxinc/nginx-unprivileged:stable-alpine@sha256:f5116ed4606f3eb015dd4a8e28cb9b351476dc0ad4bc6e9f93b19cec130cdf03 AS production
 WORKDIR /app
 COPY --from=builder /app/apps/www/out /app
 COPY apps/www/nginx.conf /etc/nginx/conf.d/default.conf
