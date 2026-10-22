@@ -5,9 +5,15 @@
     ":semanticCommits"
   ],
   "automerge": true,
-  "minimumReleaseAge": "1 day",
+  "minimumReleaseAge": "3 days",
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": { "enabled": true },
   "rebaseWhen": "behind-base-branch",
   "packageRules": [
+    {
+      "matchManagers": ["docker", "helm-values"],
+      "minimumReleaseAge": "1 day"
+    },
     {
       "matchPackageNames": ["dataaxiom/ghcr-cleanup-action"],
       "abandonmentThreshold": null
