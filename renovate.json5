@@ -11,8 +11,9 @@
   "rebaseWhen": "behind-base-branch",
   "packageRules": [
     {
-      "matchManagers": ["docker", "helm-values"],
-      "minimumReleaseAge": "1 day"
+      "matchManagers": ["docker", "dockerfile", "helm", "helm-values"],
+      "minimumReleaseAge": "1 day",
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
     },
     {
       "matchPackageNames": ["dataaxiom/ghcr-cleanup-action"],
