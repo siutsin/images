@@ -5,7 +5,7 @@
     ":semanticCommits"
   ],
   "automerge": true,
-  "minimumReleaseAge": "7 day",
+  "minimumReleaseAge": "1 day",
   "rebaseWhen": "behind-base-branch",
   "packageRules": [
     {
