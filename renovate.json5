@@ -24,6 +24,11 @@
     {
       "matchPackageNames": ["dataaxiom/ghcr-cleanup-action"],
       "abandonmentThreshold": null
+    },
+    {
+      "description": "Vulnerability fixes ship at once. The age wait stays for all other updates.",
+      "matchJsonata": ["$exists(vulnerabilityFixVersion) or $exists(isVulnerabilityAlert)"],
+      "minimumReleaseAge": null
     }
   ]
 }
