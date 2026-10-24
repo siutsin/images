@@ -1,0 +1,9 @@
+upstream: https://github.com/Threadfin/Threadfin.git
+strategy: latest-tag
+# Pinned: 1.2.37 is the newest release upstream publishes an image for, and
+# upstream's tag list defeats latest-tag resolution (a junk "delete" tag
+# sorts first, and newer source-only tags exist). Drop this pin only when
+# the deployment moves to a newer Threadfin on purpose.
+version: 1.2.37
+context: images/threadfin
+dockerfile: images/threadfin/Dockerfile

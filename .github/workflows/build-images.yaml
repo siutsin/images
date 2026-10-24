@@ -83,9 +83,14 @@ jobs:
             STRATEGY=$(yq '.strategy' "$CONFIG")
             CONTEXT=$(yq '.context' "$CONFIG")
             DOCKERFILE=$(yq '.dockerfile' "$CONFIG")
+            VERSION=$(yq '.version // ""' "$CONFIG")
             TAG=""
 
-            if [ "$STRATEGY" = "latest-tag" ]; then
+            if [ -n "$VERSION" ]; then
+              # An image may pin an exact upstream version in build.yaml
+              # when following the newest tag would be wrong.
+              TAG="$VERSION"
+            elif [ "$STRATEGY" = "latest-tag" ]; then
               # Resolve the latest non-prerelease semver tag from upstream.
               TAG=$(git ls-remote --tags --sort=-v:refname "$UPSTREAM" \
                 | grep -v '\^{}' \
