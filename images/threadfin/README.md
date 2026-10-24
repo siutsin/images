@@ -24,7 +24,7 @@ rebuild, this image rebuilds the same upstream version from source:
 ## What is in the image
 
 - The Threadfin binary, on a distroless static base, running as the
-  `nonroot` user (UID 65534). No shell, no package manager.
+  `nonroot` user (UID 65532). No shell, no package manager.
 - Static `ffmpeg` and `ffprobe` builds (from
   [mwader/static-ffmpeg](https://github.com/mwader/static-ffmpeg)), for
   Threadfin's optional ffmpeg buffer and stream probing.
