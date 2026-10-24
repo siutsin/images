@@ -43,7 +43,7 @@ COPY --from=builder /out/threadfin /usr/local/bin/threadfin
 COPY --from=builder /out/which /usr/local/bin/which
 COPY --from=ffmpeg /ffmpeg /usr/local/bin/ffmpeg
 COPY --from=ffmpeg /ffprobe /usr/local/bin/ffprobe
-COPY --from=builder --chown=65534:65534 /out/config /config
+COPY --from=builder --chown=65532:65532 /out/config /config
 
 # containerd does not create /.dockerenv. Threadfin checks for it when
 # seeding the default for its self-update setting (off in a container),
