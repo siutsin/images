@@ -41,9 +41,9 @@ jobs:
           # commits in a multi-commit push, not just the last one.
           # e.g. images/go-jsonnet/Dockerfile -> go-jsonnet
           if echo "$BEFORE_SHA" | grep -qx '0\{40\}'; then
-            CHANGED=$(git diff --name-only HEAD~1 HEAD)
+            CHANGED=$(git diff --name-only --diff-filter=d HEAD~1 HEAD)
           else
-            CHANGED=$(git diff --name-only "$BEFORE_SHA" HEAD)
+            CHANGED=$(git diff --name-only --diff-filter=d "$BEFORE_SHA" HEAD)
           fi
           NAMES=$(echo "$CHANGED" \
             | grep '^images/[^/]*/' \
