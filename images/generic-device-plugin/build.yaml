@@ -1,0 +1,9 @@
+upstream: https://github.com/squat/generic-device-plugin.git
+strategy: latest-tag
+# Pinned: upstream publishes its images per commit, and its newest tag
+# (0.2.0) is older than the deployed source, so latest-tag resolution
+# would build the wrong code. The pin is the exact commit the cluster
+# runs. Move it only on purpose, together with the deployment pin.
+version: 2a30fdce45cd8abe4cf8d705b656824fd9dd3a0f
+context: images/generic-device-plugin
+dockerfile: images/generic-device-plugin/Dockerfile
