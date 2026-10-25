@@ -20,7 +20,9 @@ RUN git clone https://github.com/squat/generic-device-plugin.git . \
 # Go 1.20.2. Bump only those three modules, to the smallest versions
 # that fix the findings (x/text v0.42.0 is the version x/net v0.60.0
 # requires). The Go 1.27.3 toolchain clears the standard library
-# findings. No source changes and no other dependency changes.
+# findings. No source changes and no other direct dependency changes;
+# the bumps pull their transitive requirements up with them and raise
+# the go directive to 1.26.0.
 RUN go get google.golang.org/grpc@v1.84.0 golang.org/x/net@v0.60.0 golang.org/x/text@v0.42.0 \
     && go mod tidy
 
