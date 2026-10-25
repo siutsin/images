@@ -11,8 +11,9 @@ nodes) to pods. Published as
 Upstream built the image for this commit in 2023 with Go 1.20.2 and
 does not rebuild old commits, so no image of this source with the
 fixes exists. A Trivy scan on 2026-10-25 found 5 critical
-and 20 high-severity flaws in it, in the Go standard library, gRPC
-and `golang.org/x/net`, every one with a published fix. Rather than
+and 50 high-severity flaws in it, in the Go standard library, gRPC,
+`golang.org/x/net` and `golang.org/x/text`, every one with a
+published fix. Rather than
 wait for upstream to rebuild, this image rebuilds the same upstream
 commit from source:
 
@@ -20,8 +21,9 @@ commit from source:
 - `google.golang.org/grpc`, `golang.org/x/net` and
   `golang.org/x/text` are bumped to the smallest fixed versions
   (v1.84.0, v0.60.0 and v0.42.0). The bumps are explicit in the
-  Dockerfile. No upstream source changes and no other dependency
-  changes.
+  Dockerfile. No upstream source changes and no other direct
+  dependency changes; the bumps pull their transitive requirements
+  up with them and raise the go directive to 1.26.0.
 - The version is pinned in `build.yaml` to the exact upstream commit
   the cluster runs, because upstream's newest tag is older than the
   deployed source.
