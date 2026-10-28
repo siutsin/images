@@ -1,7 +1,7 @@
 # The deps and builder stages run on the build platform because only the
 # static export ships in the final image.
 # hadolint ignore=DL3029
-FROM --platform=$BUILDPLATFORM node:24-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53 AS deps
+FROM --platform=$BUILDPLATFORM node:26-alpine@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797 AS deps
 WORKDIR /app
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/www/package.json ./apps/www/package.json
@@ -10,7 +10,7 @@ COPY packages/jsoncrack-react/package.json ./packages/jsoncrack-react/package.js
 RUN corepack enable pnpm && pnpm install --frozen-lockfile
 
 # hadolint ignore=DL3029
-FROM --platform=$BUILDPLATFORM node:24-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53 AS builder
+FROM --platform=$BUILDPLATFORM node:26-alpine@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797 AS builder
 WORKDIR /app
 COPY --from=deps /app /app
 COPY . .
